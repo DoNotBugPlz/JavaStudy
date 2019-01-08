@@ -195,3 +195,29 @@ public int insertRole(Role role){
 
 >在大型互联网项目中，一个数据库的链接可能也就是50条左右，然而同时并发的请求则可能是成百上千。对于这些请求，大部分的并发请求都在等待50条占有数据库的链接资源，假如平均一个doSomethingForFile的操作需要一秒，对于同时出现1000条并发请求的网站，就会出现卡顿的状态。因为大部分的请求都在等待数据库事务资源的分配，这是一个糟糕的结果。
 
+
+
+### 第四部分 Spring MVC 框架
+
+#### 第14章 Spring MVC 的初始化和流程
+
+##### 14.1MVC设计概述
+
+mvc的设计初衷是为了解耦。
+
+这段话解决了我之前的疑问，为什么Hibernate不流行了呢？
+
+>对于持久层而言，随着软件发展，迁移数据的可能性很小，所以在大部分情况下都用不到hibernate的HQL来满足数据库迁移的要求。与此同时，性能对于互联网更为重要，不可优化SQL、不够灵活成了Hibernate难以治愈的伤痛，这样mybatis就崛起了。无论是Hibernate还是mybatis都没处理好数据库事物的编程，同时随着NoSQL的强势崛起，是的Java web应用不仅能够在数据库获取数据，也可以从NoSQL中获取数据，这些已经不是持久层框架能够处理的了，而Spring MVC给出了方案。
+
+Spring MVC最大的特点就是模块化，**结构松散**。
+
+##### 14.2 组件与流程
+
+又是这张图：
+
+![1](C:\Users\Kiss Of Angel\Documents\Read Notes\Java\JavaStudy\1.jpg)
+
+*阿拉伯数字给出了组件运行的顺序*
+
+Spring MVC框架是围绕着DispatcherServlet而工作的。
+
