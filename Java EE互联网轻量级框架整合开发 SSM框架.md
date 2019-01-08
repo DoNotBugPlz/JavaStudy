@@ -108,6 +108,7 @@
 |   *Read Commit*   |     ❌      |         ✔️         |      ✔️       |
 | *Repeatable Read* |     ❌      |         ❌         |      ✔️       |
 |   *Seralizable*   |     ❌      |         ❌         |      ❌       |
+|      Popular      |     ✔️      |         ❌         |      ❌       |
 
 ##### 13.5如何选择适合的隔离级别
 
