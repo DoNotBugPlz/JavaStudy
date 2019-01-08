@@ -215,7 +215,7 @@ Spring MVC最大的特点就是模块化，**结构松散**。
 
 又是这张图：
 
-![1](C:\Users\Kiss Of Angel\Documents\Read Notes\Java\JavaStudy\1.jpg)
+![1](./1.jpg)
 
 *阿拉伯数字给出了组件运行的顺序*
 
