@@ -221,3 +221,145 @@ Spring MVC最大的特点就是模块化，**结构松散**。
 
 Spring MVC框架是围绕着DispatcherServlet而工作的。
 
+#### 第15章 深入Spring MVC组件开发
+
+##### 15.1 控制器接受各类请求参数
+
+###### 15.1.4 传递JSON参数
+
+这里在之前开发的过程中，偶有不成功的地方，这里使用书中的例子来加深传递 **List<Ojbect>** 的情况
+
+首先前端代码，这里使用了jQuery，其实无论使用那种前端语言，最重要的就是要设置post请求以及 ***contentType*** 这个参数。
+
+```javascript
+$(document).ready(function(){
+    var roleList={
+        {roleName:'role_name_1',note:'note_1'},
+        {roleName:'role_name_2',note:'note_2'},
+        {roleName:'role_name_3',note:'note_3'}
+    };
+ $.post({
+    url:"./params/addRoles.do",
+                  data:JSON.stringfy(roleList),
+    contentType:"application/json",
+        success:function (result){
+          
+        }              
+    })
+})
+```
+
+然后使用注解 **@requestBody** 来接受 **json** List
+
+```java
+@PostMapping("addRoles")
+@ResponsBody
+public ModelAndView addRoles(@RequestBody List<Role>roleList){
+    ModelAndView mv=new ModelAndView;
+    int total = roleService.insertRoles(roleList);
+    mv.addObject("total",total);
+    return mv;
+}
+```
+
+##### 15.2 重定向
+
+###### 15.2.1 重定向 传递参数的方法
+
+一个重定向相当于二次请求，所以之前请求中的数据会丢失，那么重定向能否传递数据呢？Spring MVC提供了一个方法—— **flash**属性，我们需要建立一个数据模型 **RedirectAttribute**，见名知意，下面是个例子：
+
+```java
+@RequestMapping("/addRole3")
+public String addRole3(RedirectAtrribute ra,Role role){
+    roleService.insertRole(role);
+    ra.addFlashAtrribute("role",role);
+    return "redirect:./showRoleJsoninfo2.do";
+}
+```
+
+这样就能传递POJO对象个下个地址了，其原理是使用addFlashAtrribute方法后，**SpringMVC**会将数据保存在
+
+***Session***中（***Session***会在一个会话期有效），重定向后就将其清除，这样就能够传递数据给下一个地址了。
+
+##### 15.3 保存并获取属性参数
+
+##### 15.4拦截器
+
+> 拦截器是Spring MVC中强大的控件，它可以在进入处理之前做一些操作，或者在处理器完成后进行操作，甚至是在渲染视图进行操作。SpringMVC会在启动期间就通过@RequestMapping的注解解析URI和处理器的对应关系，在运行的时候通过请求找到对应的HandlerMapping，然后构建HandlerExcutionChain对象，它是一个执行的责任链对象。
+
+###### 15.4.1拦截器的定义
+
+* **preHandle**方法：在处理器之前执行的前置方法，这样 **SpringMVC**可以在进入处理器前处理一些方法了。主要它将返回一个boolean值，会影响到后面**SpringMVC**的流程。
+* **postHandle**方法：在处理器之后执行的后置方法，处理器的逻辑完成后会运行它。
+* **afterCompletion**方法：无论是否产生异常都会在渲染视图后执行的方法。
+
+###### 15.4.2 拦截器的执行流程
+
+这里需要注意的是：**postHandle**是在视图解析和渲染视图之前，**Handle**之后
+
+###### 15.4.3 开发拦截器
+
+两种方式：
+
+一种是xml：
+
+```xml
+<mvc:annotation-driven>
+```
+
+一种是Java配置的注解方式:
+
+```java
+@EnableWebMvc
+```
+
+当前加上注解时，系统会初始化拦截器**ConversionServiceExposingInterceptor**,它是个一开始就被Spring MVC系统默认加载的拦截器，它的主要作用是根据配置在控制器上的注解来完成对应的功能。
+
+SpringMVC提供的公共拦截器 **HandlerInterceptorAdapter**，这两个注解，Spring之所以那么做，是为了提供适配器。
+
+```java
+package com.atguigu.springboot.config;
+
+import org.springframework.lang.Nullable;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+/**
+ * @Description:
+ * @Author:Dn
+ * @Date:Create in 11:19 AM 2019/1/15
+ * @Modifid By:
+ */
+public class RoleInterceptor extends HandlerInterceptorAdapter {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        System.err.println("preHandle");
+        return true;
+    }
+
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable ModelAndView modelAndView) throws Exception {
+        System.err.println("postHandle");
+    }
+
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable Exception ex) throws Exception {
+        System.err.println("afterCompletion");
+    }
+}
+
+```
+
+```xml
+<mvc:interceptors>
+    <mvc:interceptor>
+        <bean class="**拦截器**全限定名"/>
+    </mvc:interceptor>
+</mvc:interceptors>
+            
+```
+
+###### 15.4.4 多个拦截器执行的顺序
+
+##### 15.5 验证表达
+
