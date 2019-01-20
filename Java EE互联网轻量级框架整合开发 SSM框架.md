@@ -315,7 +315,11 @@ public String addRole3(RedirectAtrribute ra,Role role){
 
 当前加上注解时，系统会初始化拦截器**ConversionServiceExposingInterceptor**,它是个一开始就被Spring MVC系统默认加载的拦截器，它的主要作用是根据配置在控制器上的注解来完成对应的功能。
 
-SpringMVC提供的公共拦截器 **HandlerInterceptorAdapter**，这两个注解，Spring之所以那么做，是为了提供适配器。
+~~SpringMVC提供的公共拦截器 **HandlerInterceptorAdapter**，这两个注解，Spring之所以那么做，是为了提供适配器~~
+
+以上是P420页的原文，表述有问题，联系作者本人：<u>**杨开振**</u>先生亲自解答了我，其原话如下:
+
+![2](./2.png)
 
 ```java
 package com.atguigu.springboot.config;
@@ -361,5 +365,106 @@ public class RoleInterceptor extends HandlerInterceptorAdapter {
 
 ###### 15.4.4 多个拦截器执行的顺序
 
-##### 15.5 验证表达
+##### 15.5 验证表单
+
+###### 15.5.1 使用JSR 303 注解验证输入内容
+
+书中提供了所有注解的表格，其中有几个注解没用过，不太熟，列出来：
+
+|             注解             |                         详细信息                         |
+| :--------------------------: | :------------------------------------------------------: |
+|     @DecimalMin（value）     | 被注释的元素必须是一个数字，其值必须大于等于指定的最小值 |
+|     @DecimalMax（value）     | 被注释的元素必须是一个数字，其值必须小于等于指定的最大值 |
+| @Digits（Integer，fraction） |     被注释元素必须是一个数字，其值必须在可接受范围内     |
+|            @Past             |             被注释的元素必须是一个过去的日期             |
+|           @Future            |             被注释的元素必须是一个未来的日期             |
+
+#### 第16章 Spring MVC高级应用
+
+##### 16.1数据格式化
+
+有两个比较好用的注解:
+
+```java
+@Controller
+@RequestMapping("/convert")
+public class ConvertController{
+    @RequestMapping("/format")
+    public ModelAndView format(@RequestParam("date")@DateTimeFormat(iso=ISO.DATE)Date date,@RequestParam("amount1")@NumberFormat(pattern="#,###.##")Double amount){
+        ModelAndView mv=new ModelAndView("index");
+        mv.addObject("date",date);
+        mv.addObject("amount",amount);
+        return mv;
+    }
+}
+```
+
+通过注解**@DateTimeFormat**和**@NumberFormat**，然后通过iso配置的格式，处理器就能够将参数通过对应的格式化器进行转换，然后传递给控制器。
+
+### 第17章 Redis概述
+
+##### 17.1 Redis 在Java Web中的应用
+
+这里面有一句话很重要，说明了使用Redis的使用场景。
+
+>Redis存储的时候，需要从3个方面来考虑
+>
+>* 业务数据常用么？命中率如何？如果命中率很低，就没有必要写入缓存。
+>* 该业务数据是读操作多，还是写操作多，如果写操作多，频繁需要写入数据库，也没有必要使用缓存。
+>* 业务数据大小如何？如果要存储几百兆字节的文件，会给缓存带来很大的压力，有没有必要。
+
+### 第18章 Redis数据结构常用命令 
+
+##### 18.1 Redis数据结构-字符串
+
+redis的数据结构：
+
+|         命令          |                      说明                      |                             备注                             |
+| :-------------------: | :--------------------------------------------: | :----------------------------------------------------------: |
+|     set key value     |                   设置键值对                   |                        ep:set name dn                        |
+|        get key        |                  通过键获取值                  |                      ep：get name  >:dn                      |
+|        del key        |              通过key，删除键值对               |              删除命令，返回删除数，**通用命令**              |
+|      strlen key       |             求key 指向字符串的长度             |                 返回的是key对应的value的长度                 |
+| getrang key start end |                    获取子串                    | 记字符串的长度len，把字符串看成一个数组，而Redis是以0开始计数的，所以start 和 end 的取值范围为0到len-1 |
+|    apend key value    | 将新的字符串value，加入到原来key指向的字符串末 |                  返回key指向新字符串的长度                   |
+
+xml中配置关于Spring关于Redis字符串的运行环境，截取一段易出错的。
+
+```xml
+<bean id="redisTemplate" class="org.springframwork.data.redis.core.RedisTemplate">
+<property name="connectionFactory" ref="connectionFactory"/>
+<property name="keySerializer" ref="stringRedisSerializer"/>
+<property name="valueSerializer" ref="stringRedisSerializer"/>
+</bean>
+```
+
+这里引用原文对其特殊的地方进行说明：
+
+>由于Redis的功能比较弱，所以经常会在Java程序中读取它们，然后通过Java进行计算并设置它们的值。这里使用Spring提供的RedisTemplate测试一下它们，**值得注意的是，这里使用的是字符串序列化器，所以Redis保存的还是字符串，如果采用其他的序列化器，比如JDK序列化器，那么Redis保存的将不会是数字而是产生异常**
+
+Redis支持简单的运算
+
+|           命令           |             说明              |        备注        |
+| :----------------------: | :---------------------------: | :----------------: |
+|         incr key         |         在原字段上加1         | 只能对整数进行操作 |
+|   incrby key increment   | 在原字段上加上整数(increment) |   只能对整数操作   |
+|         decr key         |         在原字段上减1         |   只能对整数操作   |
+|   decrby key decrement   | 在原字段上减去整数(decrement) |   只能对整数操作   |
+| incrbyfloat keyincrement | 在原字段加上浮点数(increment) |  只可以操作浮点数  |
+
+代码放下：
+
+```java
+public static void testCal(){
+    ApplicationContext applicationContext=new ClassPathApplicationContext("applicationContext.xml");
+    RedisTemplate redisTemplate=applicationContext.getBean(RedisTemplata.class);
+    redisTemplate.opsForValue().set("i","9");
+    redisTemplate.opsForValue().increment("i",1);//增加键"i"的值为1，相当于incrby i 1命令；
+    redisTemplate.getConnectionFactory().getConnection().decrBy(redisTemplate.getKeySerializer().serialize("i"),6);//相当于decrybu i 6;
+}
+```
+
+减法这么操作的原因是，Redis的版本在更替，支持的命令会有所不一，而Spring提供的RedisTemplate方法不足不足以支撑Redis的所有命令，所以这里才有这样的变化。七次，其次，所有关于减法的方法，原有值都必须是整数，否则就会引发异常。
+
+##### 18.2 Redis 数据结构-哈希
 
