@@ -498,11 +498,11 @@ redisTemplate.getConnectionFactory().getConnection().lInert("list",getBytes("uft
 
 > 在命令执行入队的时候，如果是命令语法发生了问题，会提示报错，并该次事务中所有的操作都不会被执行.
 
-![redis事务](/Users/Dn/Documents/Book Notes/redis事务.png)
+![redis事务](/redis事务.png)
 
 但是，如果是仅仅只是数据格式有问题，事务中的其他操作都是会被执行的，目的是为了性能。
 
-![redis事务2](/Users/Dn/Documents/Book Notes/redis事务2.png)
+![redis事务2](./redis事务2.png)
 
 **value3**不是一个Integer，我使用了incr key3命令在事务中并不会报错，在最后提交事务的时候有报错，但是不影响我在本次事务中的其他操作。
 
