@@ -468,3 +468,67 @@ public static void testCal(){
 
 ##### 18.2 Redis 数据结构-哈希
 
+就是个hashmap
+
+##### 18.3 Redis 数据结构-链表
+
+和LinkedList差不多，又有了堆栈的属性，和queue最像，两个方向可以进入，左边操作的就是l，右边操作的就要加r，需要特别注意的就是insert操作，需要更底层的命令。RedisTemplate没办法直接实现：
+
+```java
+redisTemplate.getConnectionFactory().getConnection().lInert("list",getBytes("uftf-8"),RedisListCommands.Position.BEFORE,"node2".getByte("uft-8"),"before_node".getBytes("utf-8"));
+```
+
+由于是链表，查询非常慢，随机插入删除比较快的。在多值操作的时候，往往会使用list进行封装，比如说leftPushAll命令，对于很大的list的操作需要注意性能，比如remove这样的操作，在大的链表中会消耗Redis系统很多的性能。
+
+另外，Redis对链表有阻塞时操作（线程安全，操作数据时不释放锁。）
+
+##### 18.4 Redis 数据结构-集合
+
+##### 18.5 Redis 数据结构-有序集合
+
+### 第19章 Redis的一些常用命令
+
+##### 19.1 Redis的基础事务
+
+使用***multi***来开启事务，之后通过***exec***执行事务。
+
+##### 19.2 Reids事务的回滚
+
+值得注意的是：
+
+> 在命令执行入队的时候，如果是命令语法发生了问题，会提示报错，并该次事务中所有的操作都不会被执行.
+
+![redis事务](/Users/Dn/Documents/Book Notes/redis事务.png)
+
+但是，如果是仅仅只是数据格式有问题，事务中的其他操作都是会被执行的，目的是为了性能。
+
+![redis事务2](/Users/Dn/Documents/Book Notes/redis事务2.png)
+
+**value3**不是一个Integer，我使用了incr key3命令在事务中并不会报错，在最后提交事务的时候有报错，但是不影响我在本次事务中的其他操作。
+
+##### 19.3 用watch命令监控事务
+
+有watch命令参与的事务执行顺序如下：
+
+1. watch一个key，此key在执行任务期间不能发生变化，如果发生变化，那么事务将回滚。
+2. multi命令开启事务。
+3. 事务操作，加入命令**QUEUE**
+4. exec命令提交事务
+
+> Redis参考了多线程中使用的CAS（比较与交换，**Compare And Swap**）去执行的，在数据高并发环境中，我们称之为**乐观锁**。
+
+CAS原来会产生ABA问题，ABA问题:
+
+| 时刻顺序 |       线程1       |    线程2     |              说明               |
+| :------: | :---------------: | :----------: | :-----------------------------: |
+|    T1    |        X=A        |              |         线程1加入监控X          |
+|    T2    |   复杂运算开始    |   修改X=B    |       线程2修改X，此刻为B       |
+|    T3    |      执行中       | 处理简单业务 |                                 |
+|    T4    |      执行中       |   修改X=A    |            又变回了A            |
+|    T5    |      执行中       |  结束线程2   |                                 |
+|    T6    | 检查X=A，验证通过 |              | CAS原理通过，因为和旧值保持一致 |
+
+对于线程2，X的值变化为A->B->A，所以CAS原理的这个设计缺陷被形象地称为**“ABA问题”**。
+
+##### 19.4 流水线(pipelined)
+
