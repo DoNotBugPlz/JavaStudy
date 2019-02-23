@@ -2,6 +2,16 @@
 
 ***注：Spring MVC+Spring+MyBatis 和Redis的实现***
 
+------
+
+
+
+[TOC]
+
+-----
+
+
+
 ### 第三部分 Spring基础
 
 #### 第11章  面向切面编程
@@ -109,6 +119,14 @@
 | *Repeatable Read* |     ❌      |         ❌         |      ✔️       |
 |   *Seralizable*   |     ❌      |         ❌         |      ❌       |
 |      Popular      |     ✔️      |         ❌         |      ❌       |
+
+在[**mysq技术内幕**]第五版 一书中，它阐述的隔离级别比本书讲得更为精炼，这里摘抄一下。
+
+>**脏读**：它指的是，在某个事务尚未进行修改时，其他事务就能看到这些修改。其他事务因此认为这些行已经被修改；即使是那些行后来被回滚了，从而导致这些行未被真正意义上修改，其他事物也会这样认为。
+>
+>**不可重复读:**它指的是，在同一个事务里使用同一条select语句在每次读取时得到的结果都不一样。如果有一个事务两次执行了同一条select语句，但另外一个事务在这条语句的两次执行期间更改了某些行，那么就会发生此种情况。
+>
+>**幻读**:它指的是，一个事务突然看到一个以前没见过的行。假设某个事务在刚执行完一条select语句之后，接着就有另外一个事务插入了一个新行。如果第一个事务再次执行了相同的select语句，则可能看见这个行，实际上是幻影。
 
 ##### 13.5如何选择适合的隔离级别
 
@@ -401,6 +419,31 @@ public class ConvertController{
 
 通过注解**@DateTimeFormat**和**@NumberFormat**，然后通过iso配置的格式，处理器就能够将参数通过对应的格式化器进行转换，然后传递给控制器。
 
+###### 16.1.2 使用一对一转换器（Converter）
+
+在开发的过程中，一般来说，Spring自带的转化器已经足够使用了，但是会有一些复杂业务，希望能传递复杂的数据格式也变成一个POJO，好方便持久化层进行操作，这种情况就要使用自定义转化器。
+
+这里给一个例子，例如这里前端传递数据格式：{id}-{role_name}-{note}进行传递。我想把变为一个User对象在Controller接受。首先有几个步骤。
+
+1. 自定义一个转化器，要实现Converter接口
+
+```java
+public class StringToRoleConverter implements Converter<String,Role>{
+    @Override
+    public Role convert(String str){
+        //空串或者不包含指定字符
+        if(StringUtil.isEmpty(str)&& str.indexOf("-")== -1){
+            return null;
+        }
+        String[] arr=str.split("-");
+        
+        
+    }
+}
+```
+
+
+
 ### 第17章 Redis概述
 
 ##### 17.1 Redis 在Java Web中的应用
@@ -442,7 +485,7 @@ xml中配置关于Spring关于Redis字符串的运行环境，截取一段易出
 
 >由于Redis的功能比较弱，所以经常会在Java程序中读取它们，然后通过Java进行计算并设置它们的值。这里使用Spring提供的RedisTemplate测试一下它们，**值得注意的是，这里使用的是字符串序列化器，所以Redis保存的还是字符串，如果采用其他的序列化器，比如JDK序列化器，那么Redis保存的将不会是数字而是产生异常**
 
-Redis支持简单的运算
+**Redis支持简单的运算**
 
 |           命令           |             说明              |        备注        |
 | :----------------------: | :---------------------------: | :----------------: |
@@ -498,7 +541,7 @@ redisTemplate.getConnectionFactory().getConnection().lInert("list",getBytes("uft
 
 > 在命令执行入队的时候，如果是命令语法发生了问题，会提示报错，并该次事务中所有的操作都不会被执行.
 
-![redis事务](/redis事务.png)
+![redis事务](./redis事务.png)
 
 但是，如果是仅仅只是数据格式有问题，事务中的其他操作都是会被执行的，目的是为了性能。
 
@@ -532,3 +575,10 @@ CAS原来会产生ABA问题，ABA问题:
 
 ##### 19.4 流水线(pipelined)
 
+```javascript
+function test(){
+    windows.location=he
+}
+```
+
+#####
